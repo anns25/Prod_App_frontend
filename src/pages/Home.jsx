@@ -6,7 +6,6 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 
 import Drawer from '@mui/material/Drawer';
-import { v4 as uuidv4 } from 'uuid';
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -39,34 +38,47 @@ const Home = () => {
     };
 
     const fetchProducts = () => {
-        axios.get("https://fakestoreapi.com/products")
-            .then((res) => { setProducts(res.data) })
+        axios.get("http://localhost:3000/product/all")
+            .then((res) => { setProducts(res.data.data) })
             .catch((err) => console.log(err));
     }
 
-    const handleAddProduct = (newProduct) => {
-        const productWithId = { ...newProduct, id: uuidv4() };
-        setProducts(prevProducts => [...prevProducts, productWithId])
+    const onProductAdd = (newProduct) => {
+        setProducts(prevProducts => [newProduct, ...prevProducts]);
+        setCurrentPage(1);
     }
 
     const handleEditProduct = (edit_id, newProduct) => {
-        setProducts(products.map(product => product.id === edit_id ? newProduct : product));
+        setProducts(products.map(product => product._id === edit_id ? newProduct : product));
     }
 
     useEffect(() => {
         fetchProducts();
     }, []);
 
-    const handleDelete = (del_id) => {
-
-        axios.delete(`https://fakestoreapi.com/products/${del_id}`)
-            .then(res => setProducts(products.filter(product => product.id !== del_id)))
-            .catch(err => {
-                console.log("Error : ", err);
-                toast.error("Error : Could not delete product !")
+    const handleDelete = async (del_id) => {
+        try {
+            const res = await axios.delete('http://localhost:3000/product/deleteProduct', {
+                data: { product_id: del_id },
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                }
             });
-
+            if (res.status === 200) {
+                setProducts(products.filter(product => product._id !== del_id));
+                toast.success("Deletion completed successfully !");
+            }
+            else {
+                toast.error("Could not delete product !");
+            }
+        }
+        catch (err) {
+                toast.error("Error: Could not delete product!");
+            
+        }
     }
+
+
 
     // HANDLING PAGINATION
 
@@ -90,36 +102,40 @@ const Home = () => {
                     open={open}
                     onClose={toggleDrawer(false)}
                 >
-                    <Add onProductAdd={handleAddProduct} handleDrawer={toggleDrawer} />
+                    <Add onProductAdd={onProductAdd} handleDrawer={toggleDrawer} />
                 </Drawer>
 
                 {/* PRODUCT CATALOG GENERATION USING MAP */}
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{
+                    width: '100%',
+                    minHeight: '60vh',
+                    justifyContent: 'flex-start',
+                    alignItems: 'stretch'
+                }}>
                     {currentPageProducts.map(product => (
                         <
                             ProductCard
                             product={product}
                             handleEditDrawerOpen={handleEditDrawerOpen}
                             handleDelete={handleDelete}
-                            key={product.id}
+                            key={product._id}
                         />
                     ))}
-                    <Drawer anchor="right" open={editDrawerOpen} onClose={handleEditDrawerClose}>
-                        <Edit
-                            product={selectedProduct}
-                            onProductEdit={handleEditProduct}
-                            handleDrawer={handleEditDrawerClose}
-                        />
-                    </Drawer>
                 </Grid>
-
+                <Drawer anchor="right" open={editDrawerOpen} onClose={handleEditDrawerClose}>
+                    <Edit
+                        product={selectedProduct}
+                        onProductEdit={handleEditProduct}
+                        handleDrawer={handleEditDrawerClose}
+                    />
+                </Drawer>
 
                 <Pagination
                     count={Math.ceil(products.length / productsPerPage)}
                     page={currentPage}
                     onChange={(e, value) => setCurrentPage(value)}
                     color="primary"
-                    sx={{ mt: 4, display: 'flex', justifyContent: 'center' }} />
+                    sx={{ mt: 4, display: 'flex', justifyContent: 'center', alignItems: 'stretch' }} />
 
             </Container >
 

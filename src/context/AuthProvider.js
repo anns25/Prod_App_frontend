@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useContext, createContext, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -9,39 +10,41 @@ const AuthProvider = ({ children }) => {
     return (window.localStorage.getItem('username') || null);
   });
 
-  const [fakeUser, setFakeUser] = useState([{
-    username: "admin",
-    password: "123"
-  },
-  {
-    username: "user1",
-    password: "1234"
-  }]);
+  // const [fakeUser, setFakeUser] = useState([{
+  //   username: "admin",
+  //   password: "123"
+  // },
+  // {
+  //   username: "user1",
+  //   password: "1234"
+  // }]);
 
   const [error, setError] = useState("");
 
-  const login = (username, password) => {
-    const validUser = fakeUser.find(u => u.username === username && u.password === password);
-    if (validUser) {
-      setUser(validUser.username);
-      window.localStorage.setItem("username", validUser.username);
+  const login = async (username, password) => {
+    try{
+      const res = await axios.post('http://localhost:3000/user/login',{ username, password});
+      const token = res.data.data;
+      setUser(username);
+      window.localStorage.setItem("username", username);
+      window.localStorage.setItem("token", token);
       toast.success("Valid User. Welcome Back.");
       setError("")
     }
-    else
-      setError("Invalid Username or Password");
+    catch(err){
+      setError(err.response?.data?.message || "login failed");
+    }  
   }
 
-  const signUp = (username, password) => {
-    if (username && password) {
-      setFakeUser(prevUsers => [...prevUsers, { username, password }]);
-      setUser(username);
+  const signUp = async (username, password) => {
+    try{
+      await axios.post('http://localhost:3000/user/register', { username, password, role : "user"});
       window.localStorage.setItem("username", username);
-      toast.success("New User created !");
+      toast.success("New User Created !");
       setError("");
     }
-    else {
-      setError("Enter Username and Password");
+    catch(err){
+      setError(err.response?.data?.message || "Sign Up failed");
     }
 
   }
@@ -49,9 +52,10 @@ const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     window.localStorage.removeItem("username");
+    window.localStorage.removeItem("token");
   }
 
-  return <AuthContext.Provider value={{ login, signUp, logout, user, error }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ login, logout, signUp, user, error }}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;

@@ -4,6 +4,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { safeParse } from 'valibot';
+import { productSchema } from '../validation/productSchema';
+
 
 const Edit = ({ product, onProductEdit, handleDrawer }) => {
 
@@ -16,10 +19,13 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
         description: ""
     });
 
+    const [errors, setErrors] = useState({});
+
+
     useEffect(() => {
         if (product) {
             setData({
-                id: product.id,
+                _id: product._id,
                 title: product.title || "",
                 price: product.price || "",
                 category: product.category || "",
@@ -31,20 +37,48 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setData(prev => ({ ...prev, [name]: value }));
+        setData(prev => ({
+            ...prev,
+            [name]: name === "price" ? Number(value) : value
+        }));
     };
 
     const handleEditProduct = (e) => {
         e.preventDefault();
-        axios.put(`https://fakestoreapi.com/products/${data.id}`, data)
-            .then(response => {
-                onProductEdit(data.id, response.data);
+
+        const result = safeParse(productSchema, data);
+
+
+        if (!result.success) {
+            const fieldErrors = {};
+            result.issues.forEach(issue => {
+                const field = issue.path?.[0].key;
+
+                fieldErrors[field] = issue.message;
+            });
+            setErrors(fieldErrors);
+
+            return;
+        }
+
+
+        axios.patch('http://localhost:3000/product/updateProduct', { product_id: data._id, ...data },
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                }
+            })
+            .then(res => {
+                onProductEdit(data._id, res.data.data);
                 toast.success("Product Edited Successfully ! 🎉");
                 handleDrawer();
             })
             .catch((err) => {
-                console.log("Edit Unsuccessful", err);
-                toast.error("Error : Product could not be edited !")
+                if (err.status === 403) {
+                    toast.error("Unauthorized access : Product cannot be edited");
+                }
+                else
+                    toast.error("Error : Product could not be edited !");
             });
 
     };
@@ -94,6 +128,8 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
                         onChange={handleChange}
                         fullWidth
                         required
+                        error={Boolean(errors.title)}
+                        helperText={errors.title}
                     />
                     <TextField
                         label="Price"
@@ -103,6 +139,8 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
                         fullWidth
                         type="number"
                         required
+                        error={Boolean(errors.price)}
+                        helperText={errors.price}
                     />
                     <TextField
                         label="Category"
@@ -111,6 +149,8 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
                         onChange={handleChange}
                         fullWidth
                         required
+                        error={Boolean(errors.category)}
+                        helperText={errors.category}
                     />
                     <TextField
                         label="Image URL"
@@ -119,6 +159,8 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
                         onChange={handleChange}
                         fullWidth
                         required
+                        error={Boolean(errors.image)}
+                        helperText={errors.image}
                     />
                     <TextField
                         label="Description"
@@ -129,6 +171,8 @@ const Edit = ({ product, onProductEdit, handleDrawer }) => {
                         rows={3}
                         fullWidth
                         required
+                        error={Boolean(errors.description)}
+                        helperText={errors.description}
                     />
                     <Button
                         type="submit"

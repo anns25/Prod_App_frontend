@@ -16,8 +16,8 @@ const View = () => {
     }
 
     useEffect(() => {
-        axios.get(`https://fakestoreapi.com/products/${id}`)
-            .then((res) => { setProduct(res.data) })
+        axios.get(`http://localhost:3000/product/viewProduct/${id}`)
+            .then((res) => { setProduct(res.data.data) })
             .catch((err) => {
                 console.log(err);
                 toast.error("Could not load product details");

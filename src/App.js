@@ -17,7 +17,8 @@ function App() {
 
       <BrowserRouter>
         <ToastContainer theme="colored" />
-        {user ? <><Navbar />
+        {user ? <>
+          <Navbar />
           <Routes>
             <Route path="/" element={<Home />}></Route>
             <Route path="/product/:id" element={<View />}></Route>

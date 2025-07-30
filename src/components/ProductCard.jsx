@@ -7,13 +7,14 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 
 
-const ProductCard = ({product, handleEditDrawerOpen,handleDelete}) => {
+const ProductCard = ({product, handleEditDrawerOpen, handleDelete}) => {
 
     
     return (
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <Card sx={{
-                maxWidth: 300,
+            
+                width : "100%",
                 height: "450px",
                 margin: 'auto',
                 borderRadius: 3,
@@ -21,7 +22,7 @@ const ProductCard = ({product, handleEditDrawerOpen,handleDelete}) => {
                 textAlign: 'center',
             }}>
                 <CardContent>
-                    <Typography gutterBottom variant="h1" component="div" sx={{ fontSize: "18px", color: "#212529", height: "48px", maxidWth: "250px", marginBottom: "12px" }}>
+                    <Typography gutterBottom variant="h1" component="div" sx={{ fontSize: "18px", color: "#212529", height: "48px", maxWidth: "250px", marginBottom: "12px" }}>
                         {(product.title.length > 45) ? product.title.slice(0, 45) + "..." : product.title}
                     </Typography>
                     <Box
@@ -45,7 +46,7 @@ const ProductCard = ({product, handleEditDrawerOpen,handleDelete}) => {
                 </CardContent>
 
                 <Box px={2} pb={1}>
-                    <Link to={`product/${product.id}`}>
+                    <Link to={`product/${product._id}`}>
                         <Button
                             variant="contained"
                             fullWidth
@@ -56,7 +57,7 @@ const ProductCard = ({product, handleEditDrawerOpen,handleDelete}) => {
                     </Link>
                     <Box display="flex" justifyContent="space-between" gap={1}>
                         <Button
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleDelete(product._id)}
                             variant="contained"
                             fullWidth
                             sx={{ backgroundColor: 'red', color: '#fff', textTransform: "none" }}
