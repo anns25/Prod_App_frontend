@@ -1,11 +1,15 @@
 import { Box, TextField, Button, Paper, Typography } from '@mui/material';
 import { useAuth } from '../context/AuthProvider';
 import { useState } from 'react';
+import { safeParse } from 'valibot';
+import { userSchema } from '../validation/userSchema';
+
 
 const Login = () => {
 
-  const [username, setUsername] = useState(null);
-  const [password, setPassword] = useState(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
 
   const { login } = useAuth();
   const { signUp } = useAuth();
@@ -14,15 +18,36 @@ const Login = () => {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    login(username, password);
+    const result = safeParse(userSchema, { username, password });
+    if (!result.success) {
+      const fieldErrors = {};
+      result.issues.forEach(issue => {
+        const field = issue.path?.[0].key;
 
+        fieldErrors[field] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+    login(username, password);
   }
 
   const handleSignUp = (e) => {
     e.preventDefault();
+    const result = safeParse(userSchema, { username, password });
+    if (!result.success) {
+      const fieldErrors = {};
+      result.issues.forEach(issue => {
+        const field = issue.path?.[0].key;
 
+        fieldErrors[field] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
     signUp(username, password);
   }
+
   return (
     <Box
       display="flex"
@@ -49,10 +74,10 @@ const Login = () => {
           label="Username"
           variant="outlined"
           margin="normal"
-          name = "username"
-          required
-          error = {Boolean(error)}
+          name="username"
           onChange={(e) => setUsername(e.target.value)}
+          error={Boolean(errors.username)}
+          helperText={errors.username}
         />
 
         <TextField
@@ -61,9 +86,10 @@ const Login = () => {
           type="password"
           variant="outlined"
           margin="normal"
-          name = "password"
+          name="password"
           required
-          error = {Boolean(error)}
+          error={Boolean(errors.password)}
+          helperText={errors.password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
